@@ -32,11 +32,12 @@ export class GrammyBotRuntime {
     this.options.logger.info('Starting messaging runtime')
     await this.bot.start({
       drop_pending_updates: true,
-      onStart: (botInfo) => {
+      onStart: async (botInfo) => {
         this.options.logger.info('Messaging runtime ready', {
           botId: botInfo.id,
           username: botInfo.username
         })
+        await this.setBotProfile()
       }
     })
   }
@@ -148,5 +149,53 @@ export class GrammyBotRuntime {
       return title.length > 0 ? title : undefined
     }
     return undefined
+  }
+
+  private async setBotProfile() {
+    try {
+      // Set bot name (can only be called once per 24 hours)
+      const botName = this.options.agent.displayName
+      if (botName) {
+        try {
+          await this.bot.api.setMyName(botName)
+          this.options.logger.info('Bot name set', { name: botName })
+        } catch (error) {
+          // Ignore throttling errors (setMyName can only be called once per 24 hours)
+          if (error instanceof GrammyError) {
+            const isThrottled = error.error_code === 429 || 
+              error.description?.toLowerCase().includes('too often') ||
+              error.description?.toLowerCase().includes('throttled') ||
+              error.description?.toLowerCase().includes('24 hours')
+            
+            if (isThrottled) {
+              this.options.logger.debug('Bot name update throttled (can only be set once per 24 hours)', {
+                name: botName
+              })
+              // Continue to set profile picture even if name update is throttled
+            } else {
+              // Log other errors
+              this.options.logger.warn('Failed to set bot name', {
+                name: botName,
+                cause: error instanceof Error ? error.message : String(error)
+              })
+            }
+          } else {
+            // Log non-Grammy errors
+            this.options.logger.warn('Failed to set bot name', {
+              name: botName,
+              cause: error instanceof Error ? error.message : String(error)
+            })
+          }
+        }
+      }
+
+      // Note: setMyPhoto is not available in the Telegram Bot API
+      // Bot profile pictures can only be set manually through Telegram apps or BotFather
+      // See: https://github.com/tdlib/telegram-bot-api/issues/652
+    } catch (error) {
+      this.options.logger.error('Failed to set bot profile', {
+        cause: error instanceof Error ? error.message : String(error)
+      })
+    }
   }
 }
