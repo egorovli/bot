@@ -1,14 +1,13 @@
 import type { LogLevel } from '../../core/services/logger.ts'
-import type { AppConfig } from '../../modules/app/entities/app-config.ts'
-import type { AppConfigProvider } from '../../modules/app/ports/app-config-provider.ts'
+import type { RuntimeConfig, RuntimeConfigProvider } from '../../core/services/runtime-config-provider.ts'
 
 import { injectable } from 'inversify'
 
 const LOG_LEVELS: LogLevel[] = ['debug', 'info', 'warn', 'error']
 
 @injectable()
-export class EnvironmentAppConfigProvider implements AppConfigProvider {
-	load(): AppConfig {
+export class EnvironmentAppConfigProvider implements RuntimeConfigProvider {
+  load(): RuntimeConfig {
 		return {
 			name: Bun.env.APP_NAME ?? 'app',
 			environment: Bun.env.NODE_ENV ?? 'development',

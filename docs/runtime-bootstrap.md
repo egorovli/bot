@@ -1,23 +1,18 @@
-# App runtime bootstrap
+# Runtime bootstrap
 
-## Core & domain model
-- `packages/api/src/modules/app/entities/app.ts` outlines the in-memory representation of a running app instance (id, version, environment, start time).
-- `packages/api/src/modules/app/entities/app-config.ts` captures the domain-facing configuration contract, including the log level the rest of the system should respect.
-- `packages/api/src/modules/app/ports/app-config-provider.ts` is the boundary that any configuration source (env files, secrets managers, test doubles) must satisfy.
-- `packages/api/src/core/services/logger.ts` defines the logger abstraction shared across modules so policies/use-cases are transport agnostic.
-
-## Application use-case
-- `packages/api/src/modules/app/use-cases/start-app-use-case.ts` orchestrates booting the app: load config, generate an id, set the logger level, and emit the first lifecycle log. It is the single entry point for "start a new instance" logic.
+## Core contracts
+- `packages/api/src/core/services/logger.ts` defines the logging interface and log levels. Everything talks to `InjectionKey.Logger` so adapters stay pluggable.
+- `packages/api/src/core/services/runtime-config-provider.ts` owns the minimal config shape (name, env, version, log level) plus the provider contract. This replaced the previous app module.
+- `packages/api/src/core/services/id-generator.ts` is reused directly to issue runtime identifiers when the process starts.
 
 ## Infrastructure adapters
-- `packages/api/src/infrastructure/config/environment-app-config-provider.ts` reads `.env` values via `Bun.env`, normalizes them, and returns the domain config model. Defaults keep things runnable without extra setup.
-- `packages/api/src/infrastructure/logging/console-logger.ts` is a minimal console logger that respects log levels and supports structured context payloads.
-- `packages/api/src/infrastructure/ids/uuid-v7-generator.ts` provides deterministic id generation for the runtime without leaking crypto details into the domain.
+- `packages/api/src/infrastructure/config/environment-app-config-provider.ts` reads `.env` via `Bun.env`, normalizes log levels, and returns the `RuntimeConfig` contract.
+- `packages/api/src/infrastructure/logging/console-logger.ts` implements the `Logger` port with level-aware stdout/stderr writes.
+- `packages/api/src/infrastructure/ids/uuid-v7-generator.ts` (still a thin wrapper around `crypto.randomUUID`) powers runtime ids.
 
-## Composition root
-- `packages/api/src/cmd/serve.ts` is the CLI entrypoint. It binds the runtime container module once, resolves `StartAppUseCase`, and logs the bootstrap duration alongside the computed config. Anything starting the app should go through this command so clean-architecture boundaries stay intact.
+## Composition
+- `packages/api/src/cmd/serve.ts` now loads a `TypedContainerModule<BindingMap>` (`runtimeContainerModule`) once. The module binds logger/config/id-generator singletons only when they are not already registered, mirroring the strongly-typed usage described in the Inversify docs and community examples (see DeepWiki summary and the Perplexity example gathered earlier).
+- After loading the module, the command pulls the config + id generator directly, applies the log level, emits the "Runtime ready" log, and prints a single CLI line.
 
 ## Environment knobs
-- `APP_NAME`, `VERSION`, and `NODE_ENV` now describe the runtime identity.
-- `APP_LOG_LEVEL` (debug/info/warn/error) tunes the console logger before other modules emit logs.
-- Default values keep development simple, but production shells can override them without touching code.
+- `APP_NAME`, `VERSION`, `NODE_ENV`, and `APP_LOG_LEVEL` remain the only inputs. Missing values fall back to developer-friendly defaults so Bun scripts start without extra setup.

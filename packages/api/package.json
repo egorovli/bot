@@ -5,7 +5,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "run-p dev:serve",
-		"dev:serve": "bun run --hot --no-clear-screen ./src/index.ts",
+		"dev:serve": "bun run --watch ./src/index.ts",
 		"types:check": "tsc",
 		"test": "bun test --randomize",
 		"test:watch": "bun test --watch --randomize",
