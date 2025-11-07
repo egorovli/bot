@@ -1,4 +1,15 @@
 import type { IdGenerator } from '../../core/services/id-generator.ts'
+import type {
+  PlanResponseUseCase,
+  RecordIncomingMessageUseCase,
+  RegisterConversationUseCase
+} from '../messaging/use-cases/index.ts'
+import type {
+  ConversationRepository,
+  MessageRepository,
+  ParticipantRepository
+} from '../messaging/ports/repositories.ts'
+import type { ResponsePolicy } from '../messaging/ports/response-policy.ts'
 
 import { InjectionKey } from './injection-key.enum.ts'
 
@@ -11,5 +22,12 @@ import { InjectionKey } from './injection-key.enum.ts'
  * @see https://inversify.io/docs/ecosystem/strongly-typed/
  */
 export interface BindingMap {
-	[InjectionKey.IdGenerator]: IdGenerator
+  [InjectionKey.IdGenerator]: IdGenerator
+  [InjectionKey.ConversationRepository]: ConversationRepository
+  [InjectionKey.ParticipantRepository]: ParticipantRepository
+  [InjectionKey.MessageRepository]: MessageRepository
+  [InjectionKey.ResponsePolicy]: ResponsePolicy
+  [InjectionKey.RegisterConversationUseCase]: RegisterConversationUseCase
+  [InjectionKey.RecordIncomingMessageUseCase]: RecordIncomingMessageUseCase
+  [InjectionKey.PlanResponseUseCase]: PlanResponseUseCase
 }
