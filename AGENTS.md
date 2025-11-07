@@ -34,3 +34,6 @@ Follow Conventional Commits (`feat: add session module`, `fix: revert race condi
 - **Import order**: Keep four groups separated by blank lines—type-only imports first, then Node/Bun built-ins, external modules, and finally local paths. Alphabetize within each group and avoid mixing value + type imports in one statement.
 - **Missing values**: Prefer `undefined` over `null` for optional data. Repository/use-case signatures should follow the `Foo | undefined` pattern unless legacy interop forces `null`.
 - **Interface immutability**: Never use `readonly` on interface properties. If immutability is required, enforce it at usage sites (e.g., via `as const`) rather than the type definition.
+
+## AI Agent Workflow
+- Always activate the Serena MCP project context before starting any coding session with an AI agent. This keeps the workspace-aware tools (symbol search, edits, etc.) wired up so shared automation behaves predictably.

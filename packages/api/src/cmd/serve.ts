@@ -1,64 +1,55 @@
 import { Command } from 'commander'
 
-// import { BunUuidV7Generator } from '../infrastructure/ids/bun-uuid-v7-generator.ts'
 import { container, InjectionKey } from '../core/ioc/index.ts'
-// import { projectsContainerModule } from '../modules/projects/infrastructure/projects-container-module.ts'
-// import { worklogsContainerModule } from '../modules/worklogs/infrastructure/worklogs-container-module.ts'
-// import { initializeSampleWorklogEntries } from '../infrastructure/worklogs/poc/sample-data.ts'
-// import { worklogsPocContainerModule } from '../infrastructure/worklogs/poc/worklogs-poc-container-module.ts'
+import { EnvironmentAppConfigProvider } from '../infrastructure/config/environment-app-config-provider.ts'
+import { ConsoleLogger } from '../infrastructure/logging/console-logger.ts'
+import { UuidV7Generator } from '../infrastructure/ids/uuid-v7-generator.ts'
+import { StartAppUseCase } from '../modules/app/use-cases/start-app-use-case.ts'
+
+const ensureRuntime = (): void => {
+	if (!container.isBound(InjectionKey.Logger)) {
+		container.bind(InjectionKey.Logger).toConstantValue(new ConsoleLogger())
+	}
+
+	if (!container.isBound(InjectionKey.IdGenerator)) {
+		container.bind(InjectionKey.IdGenerator).to(UuidV7Generator).inSingletonScope()
+	}
+
+	if (!container.isBound(InjectionKey.AppConfigProvider)) {
+		container
+			.bind(InjectionKey.AppConfigProvider)
+			.to(EnvironmentAppConfigProvider)
+			.inSingletonScope()
+	}
+
+	if (!container.isBound(InjectionKey.StartAppUseCase)) {
+		container.bind(InjectionKey.StartAppUseCase).to(StartAppUseCase).inSingletonScope()
+	}
+}
 
 /**
  * Composition Root - Entry point for dependency resolution
  *
- * This is where all dependencies are resolved once and passed down to
- * application components. Avoid using container.get() elsewhere in the codebase.
+ * This command wires up runtime services once and then executes use cases.
  */
-export const serve = new Command('serve').description('Start HTTP server')
+export const serve = new Command('serve').description('Start app runtime')
 
-serve.action(function serve() {
+serve.action(async () => {
+	ensureRuntime()
+
 	const start = process.hrtime.bigint()
-
-	// Load domain modules
-	// container.load(projectsContainerModule)
-	// container.load(worklogsContainerModule)
-
-	// Load infrastructure modules (POC for now)
-	// container.load(worklogsPocContainerModule)
-
-	// Bind core services
-	// container.bind(InjectionKey.IdGenerator).to(BunUuidV7Generator).inSingletonScope()
-
-	// const idGenerator = container.get(InjectionKey.IdGenerator)
-	// const serverId = idGenerator.generate()
+	const startAppUseCase = container.get(InjectionKey.StartAppUseCase)
+	const { app } = await startAppUseCase.execute()
 	const duration = Number((process.hrtime.bigint() - start) / BigInt(1e6))
 
-	// process.stdout.write(`[${serverId}] HTTP server started on port ${/* app.server.port */ 3000}\n`)
-	// process.stdout.write(`[${serverId}] Container initialized in ${duration}ms\n`)
+	const logger = container.get(InjectionKey.Logger)
+	logger.info('Runtime ready', {
+		appId: app.id,
+		durationMs: duration,
+		environment: app.environment
+	})
 
-	// Initialize sample data in development mode
-	// if (Bun.env.NODE_ENV === 'development') {
-	// 	try {
-	// 		// Type is automatically inferred from BindingMap
-	// 		const repository = container.get(InjectionKey.WorklogEntryRepository)
-	// 		const factory = container.get(InjectionKey.WorklogEntryFactory)
-	// 		const sampleEntries = initializeSampleWorklogEntries(repository, factory)
-	// 		process.stdout.write(
-	// 			`[${serverId}] Initialized ${sampleEntries.length} sample worklog entries\n`
-	// 		)
-	// 	} catch (error) {
-	// 		process.stderr.write(
-	// 			`[${serverId}] Warning: Failed to initialize sample worklog entries: ${error instanceof Error ? error.message : 'Unknown error'}\n`
-	// 		)
-	// 	}
-	// }
-
-	// // Debug: Pretty-print container bindings
-	// if (Bun.env.NODE_ENV === 'development' || Bun.env['DEBUG_CONTAINER'] === 'true') {
-	// 	debugContainer(container)
-	// }
-
-	// TODO: Resolve and start HTTP server with resolved dependencies
-	// Example:
-	// const httpServer = container.get<HttpServer>(InjectionKey.HttpServer)
-	// httpServer.start(container)
+	process.stdout.write(
+		`[${app.id}] ${app.name} v${app.version} running in ${app.environment} mode (${duration}ms bootstrap)\n`
+	)
 })
