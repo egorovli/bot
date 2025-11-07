@@ -3,13 +3,13 @@ import type {
   PlanResponseUseCase,
   RecordIncomingMessageUseCase,
   RegisterConversationUseCase
-} from '../messaging/use-cases/index.ts'
+} from '../../modules/messaging/use-cases/index.ts'
 import type {
   ConversationRepository,
   MessageRepository,
   ParticipantRepository
-} from '../messaging/ports/repositories.ts'
-import type { ResponsePolicy } from '../messaging/ports/response-policy.ts'
+} from '../../modules/messaging/ports/repositories.ts'
+import type { ResponsePolicy } from '../../modules/messaging/ports/response-policy.ts'
 
 import { InjectionKey } from './injection-key.enum.ts'
 

@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify'
 
-import { InjectionKey } from '../../ioc/injection-key.enum.ts'
+import { InjectionKey } from '../../../core/ioc/injection-key.enum.ts'
 import type { AgentId } from '../entities/agent.ts'
 import {
   type Conversation,
