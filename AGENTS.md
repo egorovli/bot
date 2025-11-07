@@ -23,7 +23,7 @@ Write Bun tests next to the code they cover using the `.test.ts` or `.spec.ts` s
 Follow Conventional Commits (`feat: add session module`, `fix: revert race condition`) to keep history searchable—the repo already uses the pattern (`chore: initial project setup...`). Each PR should include: intent summary, linked issue, testing notes (commands + output), and screenshots for user-facing flows. Keep diffs focused, ensure lint/tests pass, and flag breaking changes in both the title and description.
 
 ## Messaging Domain Notes
-- Core messaging logic now lives under `packages/api/src/core/messaging`, mirroring the clean-architecture example we studied but intentionally transport-agnostic so adapters (Telegram, stdin/stdout, etc.) depend on the domain—not the other way around.
+- Messaging domain logic lives under `packages/api/src/modules/messaging`, mirroring the clean-architecture example we studied but intentionally transport-agnostic so adapters (Telegram, stdin/stdout, etc.) depend on the domain—not the other way around.
 - Entities (`Agent`, `Conversation`, `Participant`, `Message`, `ResponsePlan`) carry only generic identifiers, naming, conversation-kind, and timing so any transport can materialize them. A hard rule: never mention concrete protocols (e.g., “Telegram”) in the core layer.
 - To stay minimalistic, domain entities expose plain object properties plus simple factory helpers (no class getter/setter patterns or `readonly` interface modifiers)—prefer object literals and pure functions.
 - Use cases (`RegisterConversationUseCase`, `RecordIncomingMessageUseCase`, `PlanResponseUseCase`) depend solely on repository/policy ports, keeping them runnable in unit tests or alternate drivers (grammY runner, CLI, etc.).
